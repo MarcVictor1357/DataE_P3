@@ -1,0 +1,61 @@
+version: '3.9'
+services:
+
+  sgbd:
+    image: mysql:latest
+    # On nomme le container :
+    container_name: mon_sgbd
+    # On place le container sur un certain network :
+    networks:
+      - my_network_from_compose
+    volumes:
+      - partage:/var/run/mysqld
+    ports:
+      - "3306:3306"
+    expose:
+      - 3306
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=True
+      #- MYSQL_ROOT_PASSWORD=ziggy
+      # Ceci crée la base au moment du lancement :
+      - MYSQL_DATABASE=LyricsDb
+
+
+  req_lyrics:
+    image: marcvf/req_lyrics
+    # On nomme le container :
+    container_name: mon_requeteur
+    # On place le container sur un certain network :
+    networks:
+      - my_network_from_compose
+    # Créer un point de monture :
+    # (on lie le dossier home du container vers le dossier local de l’hôte)
+    volumes:
+      - partage:/var/run/mysqld
+    ports:
+      # On fait suivre le port 8000 du container
+      #    vers le port 8000 de la machine hôte :
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: host
+    expose:
+      - 8000
+    # On attend que l'API serveur bdd fonctionne avant de lancer celle-ci :
+    depends_on:
+      - 'sgbd'
+    # Dans cette image, la variable d’environnement suivante sert à
+    #    préciser le mot de passe qui permettra d’utiliser le container :
+    #environment:
+      #PSWD_TOKEN: 'bowie'
+
+
+
+# Le volume pour le partage entre les containers :
+volumes:
+  partage:
+
+# Le network mentionné ci-dessus :
+networks:
+  my_network_from_compose:
+
